@@ -1,31 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 
 @Controller()
+@ApiTags('Health check')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Post('hide-thread')
-  async hideThread(
-    @Body() body: { username: string; password: string; threadId: string },
-  ) {
-    await this.appService.login(body.username, body.password);
-    const result = await this.appService.hideThread(body.threadId);
-    return { success: true, result };
+  @Get()
+  @ApiOperation({ summary: 'Health check.', description: 'Health check.' })
+  getHello(): object {
+    return this.appService.getHello();
   }
-
-  @Post('get-threads')
-  async getThreads(@Body() body: { username: string; password: string }) {
-    await this.appService.login(body.username, body.password);
-    const result = await this.appService.getThreads();
-    return { success: true, threads: result.inbox.threads };
-  }
-
-  // @Post('get-thread-details')
-  // async getThreadDetails(
-  //   @Body() body: { username: string; password: string; threadId: string },
-  // ) {
-  //   await this.appService.login(body.username, body.password);
-  //   return await this.appService.getThreadDetails(body.threadId);
-  // }
 }
