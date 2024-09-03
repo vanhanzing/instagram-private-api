@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   IgApiClient,
   IgLoginTwoFactorRequiredError,
+  StatusResponse,
 } from 'instagram-private-api';
 import Bottleneck from 'bottleneck';
 
@@ -20,6 +21,7 @@ export class InstagramService {
     });
   }
 
+  // working , not testested for 2af user
   async login(
     username: string,
     password: string,
@@ -54,6 +56,7 @@ export class InstagramService {
     }
   }
 
+  // working
   async getThreads() {
     return this.limiter.schedule(async () => {
       try {
@@ -66,6 +69,7 @@ export class InstagramService {
     });
   }
 
+  // now working, might be buggy or incomplete
   async getThreadDetails(threadId: string) {
     return this.limiter.schedule(async () => {
       try {
@@ -99,7 +103,7 @@ export class InstagramService {
       }
     });
   }
-
+  // working
   async replyToThread(threadId: string, message: string) {
     return this.limiter.schedule(async () => {
       try {
@@ -112,15 +116,62 @@ export class InstagramService {
     });
   }
 
+  // working like unsend message feature of instagram, only can unsed mesages that we send
   async deleteMessage(threadId: string, itemId: string) {
     return this.limiter.schedule(async () => {
       try {
         const thread = await this.ig.entity.directThread(threadId);
+        console.log(
+          '🚀 ~ InstagramService ~ returnthis.limiter.schedule ~ thread:',
+          thread,
+        );
         await thread.deleteItem(itemId);
         return { success: true, message: 'Message deleted successfully' };
       } catch (error) {
         throw new Error('Failed to delete message: ' + error.message);
       }
     });
+  }
+
+  // working
+  async hideThread(threadId: string): Promise<StatusResponse> {
+    return this.limiter.schedule(async () => {
+      try {
+        const thread = await this.ig.entity.directThread(threadId);
+        const response = await thread.hide(); // Hides the thread
+        return response;
+      } catch (error) {
+        throw new Error('Failed to hide the thread: ' + error.message);
+      }
+    });
+  }
+
+  async startNewConversation(recipientUsernames: string[], message: string) {
+    try {
+      // Convert recipient usernames to user IDs (strings)
+      const userIds = await Promise.all(
+        recipientUsernames.map(async (username) => {
+          const userInfo = await this.ig.user.searchExact(username);
+          return userInfo.pk.toString(); // Convert number to string
+        }),
+      );
+
+      // Send the message to the specified recipients
+      const thread = await this.ig.entity.directThread(userIds);
+      const response = await thread.broadcastText(message);
+
+      console.log('Broadcast Response:', response);
+
+      // Safely access thread_id if it exists
+      const threadId = thread.threadId || null;
+
+      return {
+        success: true,
+        threadId: threadId,
+        message: 'Message sent successfully',
+      };
+    } catch (error) {
+      throw new Error('Failed to start a new conversation: ' + error.message);
+    }
   }
 }

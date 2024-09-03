@@ -6,6 +6,7 @@ import {
   GetThreadDetailsDto,
   ReplyDto,
   DeleteMessageDto,
+  StartNewConversationDto,
 } from './dto/dto';
 
 @ApiTags('instagram')
@@ -90,6 +91,43 @@ export class InstagramController {
     const result = await this.instagramService.deleteMessage(
       body.threadId,
       body.itemId,
+    );
+    return { success: true, result };
+  }
+
+  @Post('hide-thread')
+  @ApiOperation({ summary: 'Hide a specific thread' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully hid the thread.',
+  })
+  async hideThread(@Body() body: GetThreadDetailsDto) {
+    await this.instagramService.login(
+      body.username,
+      body.password,
+      body.twoFactorCode,
+      body.twoFactorIdentifier,
+    );
+    const result = await this.instagramService.hideThread(body.threadId);
+    return { success: true, result };
+  }
+
+  @Post('start-conversation')
+  @ApiOperation({ summary: 'Start a new conversation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Conversation started successfully.',
+  })
+  async startConversation(@Body() body: StartNewConversationDto) {
+    await this.instagramService.login(
+      body.username,
+      body.password,
+      body.twoFactorCode,
+      body.twoFactorIdentifier,
+    );
+    const result = await this.instagramService.startNewConversation(
+      body.recipients,
+      body.message,
     );
     return { success: true, result };
   }
